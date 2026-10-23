@@ -1,0 +1,100 @@
+/* ---------- Footer: rounded top corners ---------- */
+.hwf-root { border-radius: 36px 36px 0 0; }
+@media (max-width: 640px) { .hwf-root { border-radius: 26px 26px 0 0; } 
+}
+
+/* FOOTER: links on top, giant MIRWEB wordmark printed in halftone dots below (footer.js draws the dots). */
+.hwf-root {
+    --hwf-bg: #060606;
+    --hwf-ink: #e9e4da;
+    --hwf-mono: "Inter", system-ui, -apple-system, "Segoe UI", Arial, sans-serif;
+    position: relative;
+    z-index: 2;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    isolation: isolate;
+    background: var(--hwf-bg);
+    color: var(--hwf-ink);
+    border-top: 1px solid rgba(233, 228, 218, 0.08);
+    -webkit-font-smoothing: antialiased;
+}
+.hwf-top {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) repeat(3, minmax(0, 1fr));
+    gap: 40px 32px;
+    padding: clamp(40px, 5vw, 72px) clamp(20px, 4vw, 56px) clamp(28px, 3vw, 44px);
+    font-family: var(--hwf-mono);
+    font-size: 14px;
+    letter-spacing: .01em;
+    line-height: 1.6;
+}
+.hwf-brand strong { display: block; margin-bottom: 12px; font-size: 22px; font-weight: 600; letter-spacing: .12em; }
+.hwf-brand span { display: block; max-width: 30ch; opacity: .5; }
+.hwf-col h3 { margin: 0 0 16px; font: inherit; font-size: 12px; font-weight: 500; letter-spacing: .16em; text-transform: uppercase; opacity: .4; }
+.hwf-col ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.hwf-col li { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.hwf-col a, .hwf-up {
+    color: inherit; text-decoration: none; opacity: .85; background: none; border: 0; padding: 0; font: inherit; letter-spacing: inherit; cursor: pointer;
+    background-image: linear-gradient(currentColor, currentColor); background-size: 0% 1px; background-repeat: no-repeat; background-position: 0 100%;
+    transition: opacity .25s ease, background-size .35s cubic-bezier(.2, .7, .1, 1);
+}
+.hwf-col a { display: inline-flex; align-items: center; gap: 12px; min-width: 0; }
+.hwf-col a:hover, .hwf-up:hover { opacity: 1; background-size: 100% 1px; }
+.hwf-col a:focus-visible, .hwf-up:focus-visible, .hwf-copy:focus-visible { outline: 1px solid currentColor; outline-offset: 3px; opacity: 1; }
+.hwf-ic { font-size: 20px; line-height: 1; flex: none; opacity: .9; width: 20px; height: 20px; }
+.hwf-small { font-size: 14px; }
+.hwf-small span { overflow-wrap: anywhere; }
+.hwf-copy {
+    flex: none; width: 30px; height: 30px; padding: 0; display: inline-flex; align-items: center; justify-content: center;
+    border: 1px solid rgba(233, 228, 218, 0.14); border-radius: 8px; background: rgba(233, 228, 218, 0.04); color: inherit; opacity: .7; cursor: pointer;
+    transition: opacity .25s ease, color .25s ease, border-color .25s ease;
+}
+.hwf-copy:hover { opacity: 1; border-color: rgba(233, 228, 218, 0.35); }
+.hwf-copy svg { width: 15px; height: 15px; }
+.hwf-copy .ck { display: none; }
+.hwf-copy.ok { color: #5DCAA5; opacity: 1; border-color: rgba(93, 202, 165, .5); }
+.hwf-copy.ok .cp { display: none; }
+.hwf-copy.ok .ck { display: block; }
+
+.hwf-mark { position: relative; z-index: 1; width: 100%; height: clamp(170px, 19vw, 380px); touch-action: pan-y; }
+.hwf-mark canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; max-width: none; }
+
+.hwf-rule {
+    position: relative; z-index: 1; display: flex; justify-content: space-between; align-items: center; gap: 16px;
+    padding: 16px clamp(84px, 6vw, 96px) calc(18px + env(safe-area-inset-bottom, 0px)) clamp(20px, 4vw, 56px);
+    border-top: .5px solid color-mix(in srgb, var(--hwf-ink) 16%, transparent);
+    font-family: var(--hwf-mono); font-size: 13px; letter-spacing: .04em;
+}
+.hwf-legal { opacity: .45; }
+.hwf-sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+
+@media (max-width: 1000px) {
+    .hwf-top { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+    .hwf-brand { grid-column: 1 / -1; }
+}
+@media (max-width: 640px) {
+    .hwf-top { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 32px 20px; padding: 40px 22px 28px; font-size: 15px; }
+    .hwf-brand, .hwf-contact { grid-column: 1 / -1; }
+    .hwf-brand strong { font-size: 26px; }
+    .hwf-brand span { max-width: none; }
+    .hwf-col ul { gap: 14px; }
+    .hwf-copy { width: 34px; height: 34px; }
+    .hwf-mark { height: 300px; }
+    .hwf-rule { padding: 14px 22px calc(92px + env(safe-area-inset-bottom, 0px)); font-size: 12px; flex-wrap: wrap; }
+    .hwf-up { white-space: nowrap; }
+}
+@media (prefers-reduced-motion: reduce) { .hwf-col a, .hwf-up, .hwf-copy { transition: none; } }
+
+.hwf-root { margin-top: 0; }
+
+/* ---------- Footer: white, big black MIRWEB ---------- */
+.hwf-root { --hwf-bg: #ffffff; --hwf-ink: #0a0a0a; border-top: 1px solid rgba(0,0,0,.08); }
+.hwf-copy { border-color: rgba(0,0,0,.16); background: rgba(0,0,0,.04); }
+.hwf-copy:hover { border-color: rgba(0,0,0,.45); }
+.hwf-copy.ok { color: #0F6E56; border-color: rgba(15,110,86,.5); }
+.hwf-root :focus-visible { outline-color: #0a0a0a; }
+.hwf-root ::selection { background: #0a0a0a; color: #fff; }
