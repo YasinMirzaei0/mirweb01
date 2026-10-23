@@ -4,7 +4,7 @@
 
 // Paste your Formspree form address here (see the setup steps).
 // Example: 'https://formspree.io/f/abcdwxyz'
-const FORM_ENDPOINT = 'https://formspree.io/f/YOUR_FORM_ID';
+const FORM_ENDPOINT = 'http://localhost:3000/api/messages';   // change to https://YOUR-PANEL-DOMAIN/api/messages when live
 
 // Country code that is selected when the browser language gives no hint
 // (use a two-letter country code, for example 'US', 'GB', 'DE', 'TR')
