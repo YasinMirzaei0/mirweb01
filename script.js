@@ -1,10 +1,11 @@
+const T = window.MWT || function (x) { return x; };
 /* =========================================================
    SETTINGS
    ========================================================= */
 
 // Paste your Formspree form address here (see the setup steps).
 // Example: 'https://formspree.io/f/abcdwxyz'
-const FORM_ENDPOINT = 'http://localhost:3000/api/messages';   // change to https://YOUR-PANEL-DOMAIN/api/messages when live
+const FORM_ENDPOINT = 'https://mirweb-maillbox.yasinmirzaei715.workers.dev/submit';
 
 // Country code that is selected when the browser language gives no hint
 // (use a two-letter country code, for example 'US', 'GB', 'DE', 'TR')
@@ -506,11 +507,27 @@ function initContact() {
     const ccIso = document.getElementById('cc-iso');
     const ccDial = document.getElementById('cc-dial');
 
+    const IS_FA = document.documentElement.lang === 'fa';
+    let regionNames = null;
+    try { regionNames = new Intl.DisplayNames([IS_FA ? 'fa' : 'en'], { type: 'region' }); } catch (error) { regionNames = null; }
+
+    // lower case, no accents, Persian digits and letters unified, no spaces/dashes/plus
+    function norm(text) {
+        return toLatinDigits(String(text)).toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/\u064A/g, '\u06CC').replace(/\u0643/g, '\u06A9')
+            .replace(/[\u200c\u200f\u064B-\u065F]/g, '')
+            .replace(/[-_.,'()]/g, ' ').replace(/\s+/g, ' ').trim();
+    }
+
     const countries = COUNTRY_DATA.map(function (line) {
         const parts = line.split('|');
-        return { name: parts[0], iso: parts[1], dial: parts[2] };
+        const c = { name: parts[0], iso: parts[1], dial: parts[2] };
+        c.local = (IS_FA && regionNames && regionNames.of(c.iso)) || c.name;
+        c.names = [norm(c.name), norm(c.local)];
+        return c;
     }).sort(function (a, b) {
-        return a.name.localeCompare(b.name);
+        return a.local.localeCompare(b.local, IS_FA ? 'fa' : 'en');
     });
 
     let selectedCountry = countries[0];
@@ -518,7 +535,7 @@ function initContact() {
 
     const emptyItem = document.createElement('li');
     emptyItem.className = 'cc-empty';
-    emptyItem.textContent = 'No country found';
+    emptyItem.textContent = T('No country found');
     emptyItem.hidden = true;
 
     const fragment = document.createDocumentFragment();
@@ -530,14 +547,15 @@ function initContact() {
 
         button.type = 'button';
         button.className = 'cc-item';
-        name.textContent = country.name;
+        name.className = 'cc-n';
+        name.textContent = country.local;
         dial.className = 'cc-dial';
         dial.textContent = '+' + country.dial;
 
         button.appendChild(name);
         button.appendChild(dial);
         li.appendChild(button);
-        li.dataset.search = (country.name + ' ' + country.iso + ' ' + country.dial).toLowerCase();
+        li._c = country;
 
         button.addEventListener('click', function () {
             selectCountry(country.iso);
@@ -602,6 +620,8 @@ function initContact() {
             setTimeout(function () {
                 ccSearch.focus({ preventScroll: true });
             }, 50);
+        } else {
+            ccSearch.focus({ preventScroll: true });
         }
     }
 
@@ -610,18 +630,43 @@ function initContact() {
         ccBtn.setAttribute('aria-expanded', 'false');
     }
 
-    function filterCountries(query) {
-        const q = query.trim().toLowerCase().replace(/^\+/, '');
-        let shown = 0;
+    // How well a country matches: higher is better, 0 means hidden
+    function score(c, q, digits) {
+        if (digits) {
+            const d = q.replace(/\D/g, '');
+            if (c.dial === d) return 100;
+            return c.dial.indexOf(d) === 0 ? 80 - Math.min(c.dial.length - d.length, 9) : 0;
+        }
+        if (c.iso.toLowerCase() === q) return 95;
+        let best = 0;
+        c.names.forEach(function (n) {
+            if (n === q) best = Math.max(best, 100);
+            else if (n.indexOf(q) === 0) best = Math.max(best, 85);
+            else if (n.indexOf(' ' + q) !== -1) best = Math.max(best, 70);
+            else if (q.length > 2 && n.indexOf(q) !== -1) best = Math.max(best, 40);
+        });
+        return best;
+    }
 
-        Array.prototype.forEach.call(ccList.children, function (li) {
+    function filterCountries(query) {
+        const q = norm(query).replace(/^(\+|00)\s*/, '');
+        const digits = /^[\d\s]+$/.test(q) && q.replace(/\s/g, '') !== '';
+        const rows = [];
+
+        Array.prototype.forEach.call(ccList.children, function (li, index) {
             if (li === emptyItem) return;
-            const match = !q || li.dataset.search.indexOf(q) !== -1;
-            li.hidden = !match;
-            if (match) shown += 1;
+            const s = q ? score(li._c, q, digits) : 1;
+            li.hidden = s === 0;
+            if (s) rows.push({ li: li, s: s, i: index });
         });
 
-        emptyItem.hidden = shown !== 0;
+        // best matches first (keeps the alphabetical order inside the same score)
+        if (q) {
+            rows.sort(function (a, b) { return b.s - a.s || a.i - b.i; });
+            rows.forEach(function (r) { ccList.insertBefore(r.li, emptyItem); });
+        }
+        ccList.scrollTop = 0;
+        emptyItem.hidden = rows.length !== 0;
     }
 
     ccBtn.addEventListener('click', function (event) {
@@ -721,16 +766,16 @@ function initContact() {
         setError('message', '');
 
         if (name.length < 2) {
-            fail('name', 'Please enter your name.');
+            fail('name', T('Please enter your name.'));
         }
         if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) {
-            fail('email', 'Please enter a valid email address.');
+            fail('email', T('Please enter a valid email address.'));
         }
         if (digits.length < 5 || digits.length > 14) {
-            fail('phone', 'Please enter a valid phone number.');
+            fail('phone', T('Please enter a valid phone number.'));
         }
         if (message.length < 10) {
-            fail('message', 'Please tell me a little more about your project.');
+            fail('message', T('Please tell me a little more about your project.'));
         }
 
         if (firstInvalid) {
@@ -754,8 +799,8 @@ function initContact() {
         const label = document.getElementById('f-submit-label');
         if (label) {
             label.textContent = isBusy
-                ? 'Sending...'
-                : 'Send message';
+                ? T('Sending...')
+                : T('Send message');
         }
     }
 
@@ -781,9 +826,9 @@ function initContact() {
             return;
         }
 
-        if (FORM_ENDPOINT.indexOf('YOUR_FORM_ID') !== -1) {
+        if (FORM_ENDPOINT.indexOf('YOUR-WORKER') !== -1) {
             console.error('Contact form is not connected: set FORM_ENDPOINT at the top of script.js');
-            statusEl.textContent = 'The contact form is not connected yet.';
+            statusEl.textContent = T('The contact form is not connected yet.');
             return;
         }
 
@@ -806,7 +851,7 @@ function initContact() {
             })
             .catch(function (error) {
                 console.error(error);
-                statusEl.textContent = 'Something went wrong. Please check your connection and try again.';
+                statusEl.textContent = T('Something went wrong. Please check your connection and try again.');
             })
             .then(function () {
                 sending = false;
@@ -1019,7 +1064,7 @@ function initContact() {
         els.forEach(function (el) { io.observe(el); });
     }
 
-    if (!reduced) {
+    if (!reduced && document.documentElement.lang !== 'fa') {
         var targets = Array.prototype.slice.call(document.querySelectorAll(
             '#services .section-text, #services .svc-card p'));
         var ready = targets.filter(prep);
@@ -1167,7 +1212,7 @@ function initContact() {
 
         var year = sheetEl.querySelector('.pf-year');
         var kicker = document.createElement('p');
-        kicker.textContent = (year ? year.textContent.trim() + ' \u00B7 ' : '') + 'Design details';
+        kicker.textContent = (year ? year.textContent.trim() + ' \u00B7 ' : '') + T('Design details');
         add(kicker, 'case-kicker');
 
         var h = document.createElement('h2');
@@ -1188,7 +1233,7 @@ function initContact() {
             var a = document.createElement('a');
             a.className = 'pf-go case-visit';
             a.href = live; a.target = '_blank'; a.rel = 'noopener';
-            a.innerHTML = '<span>Visit live site</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>';
+            a.innerHTML = '<span>' + T('Visit live site') + '</span><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 17L17 7M8 7h9v9"/></svg>';
             add(a);
         }
 
