@@ -4,7 +4,7 @@
 
     var OPTIONS = {
         word: 'MIRWEB',
-        dotGap: 6,
+        dotGap: 7,
         radius: 80,
         crop: 0.04,
         grain: 0.5,
